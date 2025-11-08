@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T(S) Tax Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 250px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .bg-custom-warm { background-color: #f5f5f4; }
+    </style>
+</head>
+<body class="bg-custom-warm font-sans antialiased text-gray-800">
+
+    <div id="app" class="min-h-screen p-4 sm:p-8">
+        
+        <div class="max-w-2xl mx-auto bg-white p-6 sm:p-10 rounded-xl shadow-2xl border border-gray-200">
+            
+            <h2 class="text-2xl font-bold text-red-700 mb-6 text-center">T(S) Tax Quantification Tool 🛠️</h2>
+            <p class="text-sm text-gray-600 mb-6 text-center">Calculate the annual hidden cost (Time Lost to Confusion) of your team's current process friction. The result justifies your investment in Functional Certainty.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                
+                <div class="flex flex-col">
+                    <label for="minutesLost" class="text-sm font-medium text-gray-700 mb-1">1. Estimated Minutes Lost Per Day (T(S) Tax):</label>
+                    <input type="number" id="minutesLost" value="60" min="0" class="p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-lg" placeholder="e.g., 60 (1 hour)">
+                    <p class="text-xs text-gray-500 mt-1">Example: Time spent in rework, miscommunication, or debugging chaos.</p>
+                </div>
+
+                <div class="flex flex-col">
+                    <label for="hourlyCost" class="text-sm font-medium text-gray-700 mb-1">2. Average Organizational Cost Per Hour ($):</label>
+                    <input type="number" id="hourlyCost" value="50" min="10" class="p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-lg" placeholder="e.g., 50 (Blended cost for role)">
+                    <p class="text-xs text-gray-500 mt-1">Use a conservative blended rate (salary, benefits, overhead).</p>
+                </div>
+            </div>
+
+            <button onclick="calculateTaxes()" class="w-full p-4 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800 transition shadow-lg mb-8">
+                Quantify My Annual T(S) Tax Now
+            </button>
+
+            <div class="bg-gray-50 p-6 rounded-lg border border-red-200">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Your Annual Structural Liability (Output)</h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center mb-6">
+                    <div class="p-3 border rounded-lg bg-white shadow-sm">
+                        <p class="text-xs font-medium text-gray-500">Monthly Time Lost (Hours)</p>
+                        <p id="monthlyHours" class="text-3xl font-extrabold text-red-600 mt-1">0</p>
+                    </div>
+                    <div class="p-3 border rounded-lg bg-white shadow-sm">
+                        <p class="text-xs font-medium text-gray-500">Annual Financial T(S) Tax ($)</p>
+                        <p id="annualCost" class="text-3xl font-extrabold text-red-700 mt-1">$0</p>
+                    </div>
+                </div>
+
+                <p id="cta" class="text-center text-sm font-medium text-gray-700">The average cost of not eliminating this friction is $12,000 annually. Click below to secure the solution.</p>
+                <div class="text-center mt-4">
+                    <a href="[Insert Gumroad Link Here]" class="inline-block p-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition shadow-md">
+                        Download the B.L.O.S. Audit Kit ($100)
+                    </a>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 text-center">Structural Audit Visualization</h3>
+                <div class="chart-container">
+                    <canvas id="tsTaxChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    const MINUTES_IN_HOUR = 60;
+    const DAYS_IN_MONTH = 20; 
+    const MONTHS_IN_YEAR = 12;
+
+    function calculateTaxes() {
+        const minutesLost = parseFloat(document.getElementById('minutesLost').value) || 0;
+        const hourlyCost = parseFloat(document.getElementById('hourlyCost').value) || 0;
+
+        if (minutesLost <= 0 || hourlyCost <= 0) {
+            updateResults(0, 0);
+            return;
+        }
+
+        // Calculate Monthly and Annual T(S) Hours
+        const monthlyMinutes = minutesLost * DAYS_IN_MONTH;
+        const monthlyHours = monthlyMinutes / MINUTES_IN_HOUR;
+        const annualHours = monthlyHours * MONTHS_IN_YEAR;
+
+        // Calculate Monthly and Annual T(S) Financial Cost
+        const annualCost = annualHours * hourlyCost;
+
+        updateResults(monthlyHours, annualCost);
+        updateChart(annualCost);
+    }
+
+    function updateResults(monthlyHours, annualCost) {
+        document.getElementById('monthlyHours').textContent = monthlyHours.toFixed(1);
+        document.getElementById('annualCost').textContent = '$' + annualCost.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    let tsTaxChart;
+
+    function updateChart(annualCost) {
+        const annualGoal = 12000;
+        const data = [annualCost, annualGoal];
+        const labels = ['Your Calculated T(S) Tax', 'Benchmark Anti-Friction Goal'];
+        const colors = [annualCost > annualGoal ? '#dc2626' : '#10b981', '#6b7280'];
+
+        if (tsTaxChart) {
+            tsTaxChart.data.datasets[0].data = data;
+            tsTaxChart.data.datasets[0].backgroundColor = colors;
+            tsTaxChart.update();
+            return;
+        }
+
+        const ctx = document.getElementById('tsTaxChart').getContext('2d');
+        tsTaxChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Annual Cost ($)',
+                    data: data,
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Cost in USD ($)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += '$' + context.parsed.y.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize on load
+    calculateTaxes(); 
+</script>
+</body>
+</html>
